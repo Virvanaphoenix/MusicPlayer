@@ -5,8 +5,6 @@ import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
 import android.media.MediaPlayer;
-import android.os.Handler;
-import android.os.Message;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
 import android.util.Log;
@@ -24,39 +22,35 @@ import java.util.List;
 
 public class MainActivity extends AppCompatActivity implements View.OnClickListener {
 
-    private int listPosition;   //播放歌曲在mp3Infos的位置
-    private int currentTime;    //当前歌曲播放时间
-    private int duration;       //歌曲长度
-    MediaPlayer player = new MediaPlayer();
-    String url;
+    private int mListPosition;   //播放歌曲在mp3Infos的位置
+    private int mCurrentTime;    //当前歌曲播放时间
+    private int mDuration;       //歌曲长度
+    private MediaPlayer player = new MediaPlayer();
+    private String mUrl;
 
     private int flag;           //播放标识
     private boolean isPlaying;              // 正在播放
     private boolean isPause;                // 暂停
 
-    ProgressBar music_progressBar;
-    ListView list_music;
-    ImageView previousBtn, playBtn, nextBtn;
-    TextView txt_name;
+    private ProgressBar music_progressBar;
+    private ListView list_music;
+    private ImageView previousBtn;
+    private ImageView playBtn;
+    private ImageView nextBtn;
+    private TextView txt_name;
 
 
     private PlayerReceiver playerReceiver;
-    List<String> path = new ArrayList<>();
+    private List<String> path = new ArrayList<>();
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
-
         findView();
-
         playerReceiver = new PlayerReceiver();
-
-
         initData();
         initListener();
-
-
     }
 
     private void initListener() {
@@ -69,7 +63,7 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
                 TextView tv = (TextView) view.findViewById(R.id.text_name);
                 String path = tv.getText().toString();
                 player.reset();
-                play(path,position);
+                play(path, position);
 
             }
         });
@@ -85,8 +79,7 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
         super.onResume();
 
 
-
-        music_progressBar.setMax(duration);
+        music_progressBar.setMax(mDuration);
         isPlaying = true;
         isPause = false;
 
@@ -99,7 +92,6 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
 
 //        findView();
     }
-
 
 
     public void findView() {
@@ -123,16 +115,16 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
     /**
      * 播放音乐
      */
-    public void play(String url,int position) {
+    public void play(String url, int position) {
         Intent intent = new Intent(this, PlayService.class);
         intent.setAction("com.moliying.media.MUSIC_SERVICE");
-        intent.putExtra("url", url);
-        intent.putExtra("listPosition", listPosition);
+        intent.putExtra("mUrl", url);
+        intent.putExtra("mListPosition", mListPosition);
         intent.putExtra("MSG", Config.PLAY_MSG);
         startService(intent);
         isPlaying = true;
         txt_name.setText(path.get(position));
-        listPosition = position;
+        mListPosition = position;
         playBtn.setImageResource(R.drawable.play_btn_pause);
     }
 
@@ -191,14 +183,14 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
      */
     public void previous_music() {
         playBtn.setImageResource(R.drawable.play_btn_pause);
-        if (listPosition - 1 >= 0) {
-            listPosition = listPosition - 1;
-            txt_name.setText(path.get(listPosition));
+        if (mListPosition - 1 >= 0) {
+            mListPosition = mListPosition - 1;
+            txt_name.setText(path.get(mListPosition));
             Intent intent = new Intent(this, PlayService.class);
             intent.setAction("com.moliying.media.MUSIC_SERVICE");
-            intent.putExtra("listPosition", listPosition);
+            intent.putExtra("mListPosition", mListPosition);
             intent.putExtra("MSG", Config.PRIVIOUS_MSG);
-            intent.putExtra("url", path.get(listPosition));
+            intent.putExtra("mUrl", path.get(mListPosition));
             startService(intent);
         } else {
             Toast.makeText(MainActivity.this, "没有上一首了", Toast.LENGTH_SHORT).show();
@@ -211,14 +203,14 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
      */
     public void next_music() {
         playBtn.setImageResource(R.drawable.play_btn_pause);
-        if (listPosition + 1 <= path.size() - 1) {
-            listPosition = listPosition + 1;
-            txt_name.setText(path.get(listPosition));
+        if (mListPosition + 1 <= path.size() - 1) {
+            mListPosition = mListPosition + 1;
+            txt_name.setText(path.get(mListPosition));
             Intent intent = new Intent(this, PlayService.class);
             intent.setAction("com.moliying.media.MUSIC_SERVICE");
-            intent.putExtra("listPosition", listPosition);
+            intent.putExtra("mListPosition", mListPosition);
             intent.putExtra("MSG", Config.NEXT_MSG);
-            intent.putExtra("url", path.get(listPosition));
+            intent.putExtra("mUrl", path.get(mListPosition));
             startService(intent);
         } else {
             Toast.makeText(MainActivity.this, "没有下一首了", Toast.LENGTH_SHORT).show();
@@ -245,20 +237,20 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
         public void onReceive(Context context, Intent intent) {
             String action = intent.getAction();
             if (action.equals(Config.MUSIC_CURRENT)) {
-                currentTime = intent.getIntExtra("currentTime", -1);
-                Log.i("ssssee","receive--->"+currentTime);
-                music_progressBar.setProgress(currentTime);
+                mCurrentTime = intent.getIntExtra("mCurrentTime", -1);
+                Log.i("ssssee", "receive--->" + mCurrentTime);
+                music_progressBar.setProgress(mCurrentTime);
 //                Message msg = new Message();
-//                msg.arg1=currentTime;
+//                msg.arg1=mCurrentTime;
 //                mhandler.sendMessage(msg);
             } else if (action.equals(Config.MUSIC_DURATION)) {
-                int duration = intent.getIntExtra("duration", -1);
+                int duration = intent.getIntExtra("mDuration", -1);
                 music_progressBar.setMax(duration);
             } else if (action.equals(Config.UPDATE_ACTION)) {
                 //获取Intent中的current消息，current代表当前正在播放的歌曲
-                listPosition = intent.getIntExtra("current", -1);
-                url = path.get(listPosition);
-                if (listPosition == 0) {
+                mListPosition = intent.getIntExtra("current", -1);
+                mUrl = path.get(mListPosition);
+                if (mListPosition == 0) {
                     playBtn.setBackgroundResource(R.drawable.pause_selector);
                     isPause = true;
                 }
